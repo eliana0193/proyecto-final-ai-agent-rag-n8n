@@ -2,7 +2,7 @@
 
 **Curso:** AI Automation · **Comisión:** #97430  
 **Autora:** Eliana Cardoso · **Fecha:** noviembre de 2026  
-**Estado:** prototipo académico validado con datos sintéticos. Incluye dos workflows exportados: [`workflows/workflow-agente-rag.json`](workflows/workflow-agente-rag.json) (**V7 validada**) y [`workflows/workflow-ingesta-rag.json`](workflows/workflow-ingesta-rag.json) (ingesta limpia). La ingesta fue **reimportada y ejecutada correctamente** con 495 registros; el flujo de consulta **V7** respondió correctamente dos solicitudes simultáneas. El JSON público elimina referencias a credenciales e identificadores de instancia; después de importarlo se deben reasignar las credenciales. Véase la [auditoría de la devolución docente](docs/AUDITORIA_PREENTREGA_4.md).
+**Estado:** prototipo académico validado con datos sintéticos. Incluye dos workflows exportados: [`workflows/workflow-agente-rag.json`](workflows/workflow-agente-rag.json) (**V7 validada**) y [`workflows/workflow-ingesta-rag.json`](workflows/workflow-ingesta-rag.json) (ingesta limpia). La ingesta fue **reimportada y ejecutada correctamente** con 495 registros; el flujo de consulta **V7** respondió correctamente dos solicitudes simultáneas. El JSON público elimina referencias a credenciales e identificadores de instancia; después de importarlo se deben reasignar las credenciales. 
 
 ## 1. Caso de negocio
 
@@ -187,7 +187,3 @@ Salida observada:
 
 Los controles concretos ejecutados y el detalle de requisitos se documentan en [`docs/REQUISITOS_ENTREGA.md`](docs/REQUISITOS_ENTREGA.md). Antes de presentar, **reimportado y ejecutado** el JSON limpio de ingesta (sus nodos funcionales se conservaron sin cambios), reconectar credenciales y verificar la legibilidad de las capturas. La pequeña prueba de carga **ya se realizó sobre V7**, con dos solicitudes concurrentes y 2/2 respuestas correctas. No se deben presentar estos resultados como prueba de escalabilidad productiva.
 
-
-## 9. Seguimiento de la devolución de Preentrega 4
-
-La [auditoría de los siete puntos](docs/AUDITORIA_PREENTREGA_4.md) diferencia observaciones resueltas, limitaciones justificadas y pruebas todavía no realizadas. El flujo de ingesta **incluido** excluye el agente antiguo con Gemini, Simple Memory y la Code Tool con datos inventados: esos nodos nunca fueron parte del circuito de consulta V6 histórico; la consulta actual es V7. La limpieza se realizó sobre el JSON exportado, conservando intactas las conexiones y configuraciones de ingesta/indexación y verificación manual; **se reimportó y verificó** con 495 registros.
