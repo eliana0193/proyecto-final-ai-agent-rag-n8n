@@ -156,7 +156,6 @@ Las pruebas históricas de V6 conservan valor para mostrar controles del agente,
 6. Probar con PowerShell: `./scripts/probar-webhook.ps1 -Url 'http://localhost:5678/webhook-test/RUTA-REAL' -Caso individual`. Para otros casos utilizar `-Caso comparacion`, `sin_datos` o `no_autorizado`.
 7. Abrir la ejecución y contrastar **Logs** del agente, respuestas `output`, `estado`, `verificacion` y ramas de contingencia.
 
-**Atención:** Simple Vector Store guarda la información en memoria. Si n8n se reinicia, los datos pueden desaparecer: es preciso **volver a ejecutar la ingesta**. El ZIP no incluye el XLSX original porque no estuvo disponible como archivo de origen verificable para este armado; usar solo datos sintéticos.
 
 ### Ejemplo de entrada y salida
 
@@ -185,5 +184,5 @@ Salida observada:
 
 **Mejoras futuras, no alegadas como implementadas:** persistencia vectorial (Supabase/PGVector u otra), autenticación corporativa y permisos verificados en origen, integración real con WhatsApp, monitoreo de latencia/uso/tokens a escala, ingesta y consultas completas para las 16 bancas y eventual automatización del envío de informes con revisión humana. Para producción también sería necesario filtrar por banca **antes** de recuperar información del almacenamiento y no depender solamente del filtro posterior.
 
-Antes de presentar, **reimportado y ejecutado** el JSON limpio de ingesta (sus nodos funcionales se conservaron sin cambios), reconectar credenciales y verificar la legibilidad de las capturas. La pequeña prueba de carga **ya se realizó sobre V7**, con dos solicitudes concurrentes y 2/2 respuestas correctas. No se deben presentar estos resultados como prueba de escalabilidad productiva.
+Antes de presentar, **reimportado y ejecutado** el JSON limpio de ingesta (sus nodos funcionales se conservaron sin cambios), reconectar credenciales y verificar la legibilidad de las capturas. La pequeña prueba de carga **ya se realizó sobre V7**, con dos solicitudes concurrentes y 2/2 respuestas correctas. 
 
