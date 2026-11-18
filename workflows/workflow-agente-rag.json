@@ -1,0 +1,495 @@
+{
+  "name": "Proyecto Final - AI Agent RAG Ollama - V7 validada",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2065b4db-3d6f-44e6-a830-19f3a4735f48",
+              "name": "sessionId",
+              "value": "={{ $json.body.from }}",
+              "type": "string"
+            },
+            {
+              "id": "528f7185-89ff-4449-a305-e7a036230409",
+              "name": "mensaje",
+              "value": "={{ $json.body.text.body }}",
+              "type": "string"
+            },
+            {
+              "id": "70979957-adb3-4643-acb9-934946ad7a73",
+              "name": "pregunta",
+              "value": "={{ $json.body.text.body }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": "",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        304
+      ],
+      "id": "79945baf-0625-4969-9d74-047072006bc8",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "consulta-presupuesto-rag-ai-agent-v7",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        304
+      ],
+      "id": "9b8f0673-c418-409c-bbae-e7b949c6e774",
+      "name": "Webhook",
+      "webhookId": "consulta-presupuesto-rag-ai-agent-v7"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "\nconst datos = $json;\n\nconst usuario = String(datos.sessionId ?? \"\").trim();\nconst pregunta = String(datos.pregunta ?? \"\");\n\n// Permisos ficticios para la demostración.\nconst permisos = {\n  \"cliente_prueba_01\": [\"Banca 01\"],\n  \"cliente_prueba_02\": [\"Banca 02\"]\n};\n\n// Identificar las bancas mencionadas en la consulta.\nconst coincidencias = [\n  ...pregunta.matchAll(/\\bbanca\\s*0*(\\d+)\\b/gi)\n];\n\nconst bancasSolicitadas = [\n  ...new Set(coincidencias.map(m =>\n    `Banca ${String(Number(m[1])).padStart(2, \"0\")}`\n  ))\n];\n\nconst bancasPermitidas = permisos[usuario] ?? [];\n\n// Para esta prueba exigimos una banca explícita.\nconst autorizado =\n  bancasPermitidas.length > 0 &&\n  bancasSolicitadas.length === 1 &&\n  bancasPermitidas.includes(bancasSolicitadas[0]);\n\nreturn {\n  json: {\n    ...datos,\n    bancaAutorizada: bancasPermitidas[0] ?? null,\n    bancaSolicitada: bancasSolicitadas[0] ?? null,\n    autorizado,\n    mensajeError: autorizado\n      ? null\n      : \"No tenés autorización para realizar esta consulta o falta indicar una banca válida.\"\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        304
+      ],
+      "id": "3abe2ae9-64d5-4376-a279-8cb1e62a2e1b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "c3796f36-a5d3-4903-a977-31bf2e1b755a",
+              "leftValue": "={{ $json.autorizado }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        688,
+        304
+      ],
+      "id": "41ad80be-a88b-4895-a491-48e6b8c8db96",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "18786104-9718-4649-96d7-9dadac9b7f1d",
+              "name": "output",
+              "value": "={{ $json.mensajeError }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        928,
+        64
+      ],
+      "id": "606f3b95-808f-4623-be77-ddab3a01cc4f",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "069a0a38-ff0b-42f5-a38a-eabaf493de91",
+              "name": "output",
+              "value": "El asistente presupuestario no está disponible temporalmente. Intentá nuevamente más tarde.",
+              "type": "string"
+            },
+            {
+              "id": "554807bb-e1bb-4e78-b480-b8b2bc03feee",
+              "name": "estado",
+              "value": "error",
+              "type": "string"
+            },
+            {
+              "id": "42ba7fc4-6e7b-41a0-9c03-5e4b7d84f0de",
+              "name": "codigo",
+              "value": "SERVICIO_NO_DISPONIBLE",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2000,
+        0
+      ],
+      "id": "22e6d830-277d-4ac6-8716-3d33f90ea3ac",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:3b",
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        544
+      ],
+      "id": "a8b8f644-2cb7-465c-9a89-7117d329f9e3",
+      "name": "Ollama Chat Model"
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "memoryKey": {
+          "__rl": true,
+          "value": "rag_banca_01",
+          "mode": "list",
+          "cachedResultName": "rag_banca_01"
+        },
+        "prompt": "={{ $json.pregunta }}",
+        "topK": 8
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        928,
+        304
+      ],
+      "id": "21677008-59e6-4f92-9b80-a4b5c99d567d",
+      "name": "Simple Vector Store",
+      "alwaysOutputData": true,
+      "notes": "Búsqueda vectorial OBLIGATORIA antes del modelo. Usa la misma Memory Key y embeddings que los documentos indexados."
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        912,
+        560
+      ],
+      "id": "fbd0e95d-dffb-47ff-9b64-8d89da3dd75e",
+      "name": "Embeddings Google Gemini"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1) Sólo documentos con banca validada en metadatos.\nconst solicitud = $('If').first().json;\nconst banca = String(solicitud.bancaAutorizada ?? '').trim();\nconst normalizar = (x) => String(x ?? '').normalize('NFD')\n  .replace(/[\\u0300-\\u036f]/g, '').toLowerCase().trim();\nconst pregunta = normalizar(solicitud.pregunta);\nconst encontrados = $input.all().map(item => item.json?.document ?? item.json ?? {});\nconst documentos = encontrados.filter(doc =>\n  normalizar(doc.metadata?.banca) === normalizar(banca) &&\n  banca !== '' && typeof doc.pageContent === 'string' && doc.pageContent.trim() !== ''\n);\n\n// 2) Separar las filas presupuestarias y conservar sus metadatos.\n// Simple Vector Store puede devolver el mismo registro repetido tras varias ingestas.\n// Eliminar SOLO filas idénticas; NO mezclar cuentas, rubros ni importes diferentes.\nconst filas = [];\nconst filasVistas = new Set();\nlet filasDuplicadasDescartadas = 0;\nfor (const doc of documentos) {\n  const rubro = String(doc.metadata?.rubro ?? '');\n  for (const linea of doc.pageContent.split(/\\r?\\n/)) {\n    if (!/\\bNombre de cuenta\\s*:/i.test(linea) || !/\\bDESVIO_YTD\\s*:/i.test(linea)) continue;\n    const nombre = (linea.match(/Nombre de cuenta:\\s*(.*?)\\s*\\|\\s*PLAN_YTD\\s*:/i) ?? [])[1] ?? '';\n    const cuenta = (linea.match(/\\bCuenta:\\s*(\\d+)\\b/i) ?? [])[1] ?? '';\n    const lineaLimpia = linea.trim();\n    const clave = [normalizar(banca), normalizar(rubro), cuenta, lineaLimpia].join('||');\n    if (filasVistas.has(clave)) {\n      filasDuplicadasDescartadas++;\n      continue;\n    }\n    filasVistas.add(clave);\n    filas.push({ rubro, nombre, cuenta, linea: lineaLimpia });\n  }\n}\n\n// 3) Resolver la petición concreta antes de construir el contexto del modelo.\nconst cuentaPedida = (solicitud.pregunta.match(/\\bcuenta\\s*(\\d{6,})\\b/i) ?? [])[1];\nconst rubros = [...new Set(filas.map(f => f.rubro).filter(Boolean))];\nconst rubroPedido = rubros.find(r => pregunta.includes(normalizar(r)));\nconst nombresMencionados = filas.filter(f => f.nombre && pregunta.includes(normalizar(f.nombre)));\nlet relevantes = filas;\nif (cuentaPedida) {\n  relevantes = filas.filter(f => f.cuenta === cuentaPedida);\n} else if (nombresMencionados.length) {\n  relevantes = nombresMencionados;\n} else if (rubroPedido) {\n  relevantes = filas.filter(f => normalizar(f.rubro) === normalizar(rubroPedido));\n}\n\n// Preguntas de lista: nunca afirmar que se recuperó todo el universo.\nconst esListado = /\\b(enumera|enumera|lista|listar|todas las cuentas|todos los registros)\\b/.test(pregunta);\nconst totalRelevantes = relevantes.length;\nconst limiteFilas = esListado ? 3 : 6;\nrelevantes = relevantes.slice(0, limiteFilas);\nconst contextoRAG = relevantes.map(f =>\n  `Banca: ${banca} | Rubro: ${f.rubro} | ${f.linea}`\n).join('\\n');\n\nreturn [{ json: {\n  ...solicitud,\n  contextoRAG,\n  cantidadDocumentos: documentos.length,\n  documentosDescartados: encontrados.length - documentos.length,\n  cantidadFilasRelevantes: totalRelevantes,\n  filasDuplicadasDescartadas,\n  filasEnviadasAlModelo: relevantes.length,\n  listadoParcial: esListado,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        304
+      ],
+      "id": "025df8aa-f9e9-4875-b64b-db9aa49504f5",
+      "name": "Filtrar documentos RAG",
+      "notes": "Valida metadata.banca y filtra por consulta. V7: deduplica filas idénticas devueltas por varias ingestas; informa filasDuplicadasDescartadas. Mantener autorización antes del RAG."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ 'CONSULTA DEL USUARIO:\\n' + $json.pregunta + '\\n\\nBANCA AUTORIZADA: ' + $json.bancaAutorizada + '\\n\\nFILAS RAG FILTRADAS Y AUTORIZADAS (única fuente de datos):\\n' + ($json.contextoRAG || 'SIN FILAS RELEVANTES') + '\\n\\nCONSIGNA: respondé esta consulta sobre las filas disponibles. Si pide una lista, máximo 3 cuentas. Si pide un mayor sobregasto, compará solamente los desvíos negativos del período solicitado. No inventes causas ni totales. Las salidas se validarán matemáticamente luego.' }}",
+        "options": {
+          "systemMessage": "ROL: Sos un analista de Control de Gestión para una simulación académica de 16 bancas. El paso RAG anterior recuperó y filtró filas de la banca autorizada. Usá EXCLUSIVAMENTE las FILAS RAG que llegan en el mensaje del usuario y no uses conocimiento externo para inventar cifras.\nOBJETIVO: interpretar consulta, distinguir banca/cuenta/rubro/período YTD o MTD y redactar una respuesta concisa en español.\nREGLAS: (1) DESVIO = PLAN - REAL. (2) negativo = SOBREGASTO; positivo = MENOR GASTO. (3) Mayor sobregasto = el valor más negativo entre las filas relevantes; nunca el positivo mayor. (4) Diferenciá registros de cuenta de totales de rubro; no sumes fragmentos como si fueran totales. (5) No inventes importes, porcentajes ni causas operativas. (6) Lista: hasta 3 cuentas, indicar muestra parcial. (7) Límite 600 caracteres. (8) Ante ausencia de filas pertinentes, responder que no hay datos suficientes. (9) Tenés la herramienta Calculator para operaciones y comparaciones aritméticas cuando sea útil; usala ante una comparación de dos o más importes. Calculadora no es fuente de información presupuestaria. (10) No ignores el filtro de permisos ni pidas herramientas externas para obtener bancas distintas. (11) No envíes correos ni modifiques archivos. La etapa posterior valida los resultados numéricos. ",
+          "maxIterations": 4,
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1744,
+        208
+      ],
+      "id": "dd961bcd-b030-439c-b187-bd228459fa00",
+      "name": "AI Agent RAG Ollama",
+      "retryOnFail": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "0e0e79ee-d82b-459f-8797-8fd9114a572e",
+              "leftValue": "={{ $json.cantidadFilasRelevantes }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1472,
+        304
+      ],
+      "id": "4dadbb58-b530-4931-acf9-b6960fbb5d6e",
+      "name": "Hay documentos autorizados"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9545b50d-6963-4e5d-a0de-f534291180f1",
+              "name": "output",
+              "value": "No encontré información suficiente para responder con los datos disponibles.",
+              "type": "string"
+            },
+            {
+              "id": "40aa1867-09ae-42d5-b62a-bd613333782a",
+              "name": "estado",
+              "value": "sin_datos",
+              "type": "string"
+            },
+            {
+              "id": "98029bc5-f0d8-47e7-ac53-08547475c59c",
+              "name": "codigo",
+              "value": "SIN_FILAS_RELEVANTES",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1744,
+        416
+      ],
+      "id": "dc6d268e-d73c-47f7-8667-91152ae04289",
+      "name": "Sin documentos autorizados"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validación determinística de consultas a cuentas y listas.\n// Se ejecuta DESPUÉS del AI Agent y utiliza únicamente filas RAG\n// cuya banca fue verificada en \"Filtrar documentos RAG\".\nconst entrada = $input.first()?.json ?? {};\nconst fuente = $('Filtrar documentos RAG').first().json;\nconst sinDatos = 'No encontré información suficiente para responder con los datos disponibles.';\nconst normalizar = v => String(v ?? '').normalize('NFD')\n  .replace(/[\\u0300-\\u036f]/g, '').toLowerCase().trim();\nconst pregunta = normalizar(fuente.pregunta);\nconst bancaAutorizada = normalizar(fuente.bancaAutorizada);\nconst numeroCuenta = (String(fuente.pregunta).match(/\\bcuenta\\s*(\\d{6,})\\b/i) ?? [])[1];\nconst esLista = /\\b(enumera|enumera|lista|listame|listar|todas las cuentas|todos los registros)\\b/.test(pregunta);\nconst pideYtd = /\\bYTD\\b/i.test(fuente.pregunta);\nconst pideMtd = /\\bMTD\\b/i.test(fuente.pregunta);\nconst periodo = pideYtd && !pideMtd ? 'YTD' : pideMtd && !pideYtd ? 'MTD' : null;\n\nfunction leerCampos(linea) {\n  const valores = {};\n  for (const segmento of linea.split('|')) {\n    const pos = segmento.indexOf(':');\n    if (pos !== -1) valores[segmento.slice(0, pos).trim()] = segmento.slice(pos+1).trim();\n  }\n  return valores;\n}\nfunction numeroValido(x) { return /^-?\\d+(?:\\.\\d+)?$/.test(String(x ?? '')); }\nfunction importe(x) { return new Intl.NumberFormat('es-AR', {maximumFractionDigits: 2}).format(Number(x)); }\nfunction calcularValidado(f, periodo) {\n  if (!periodo) return null;\n  const plan = f['PLAN_' + periodo], real = f['REAL_' + periodo], desvio = f['DESVIO_' + periodo];\n  if (![plan, real, desvio].every(numeroValido)) return null;\n  if (Math.abs((Number(plan) - Number(real)) - Number(desvio)) > 0.000001) return null;\n  return Number(desvio);\n}\n// Segunda defensa: no considerar ambiguas varias copias de la MISMA fila RAG.\n// El Set preserva filas distintas, aun si coinciden en el nombre de cuenta.\nconst lineasUnicas = [...new Set(String(fuente.contextoRAG ?? '')\n  .split(/\\r?\\n/).map(s => s.trim())\n  .filter(s => /\\bNombre de cuenta\\s*:/i.test(s)))];\nconst filas = lineasUnicas.map(leerCampos)\n  .filter(f => normalizar(f.Banca) === bancaAutorizada && f['Nombre de cuenta']);\nlet texto = entrada.text ?? entrada.output ?? entrada.response?.text ?? entrada.response?.output ?? '';\nif (typeof texto !== 'string') texto = String(texto ?? '');\ntexto = texto.trim();\nlet tipoRespuesta = 'modelo';\n\nif (fuente.autorizado !== true || !bancaAutorizada) {\n  texto = sinDatos;\n  tipoRespuesta = 'rechazo_seguridad';\n} else if (numeroCuenta || esLista || filas.some(f => pregunta.includes(normalizar(f['Nombre de cuenta'])))) {\n  let seleccion = [];\n  if (numeroCuenta) {\n    seleccion = filas.filter(f => f.Cuenta === numeroCuenta);\n  } else if (esLista) {\n    seleccion = filas.slice(0, 3);\n  } else {\n    seleccion = filas.filter(f => pregunta.includes(normalizar(f['Nombre de cuenta'])));\n  }\n  // Si no hay un período solicitado inequívocamente, no se adivina YTD/MTD.\n  const valores = seleccion.map(f => ({f, valor: calcularValidado(f, periodo)}));\n  if (!valores.length || valores.some(x => x.valor === null) || !periodo) {\n    texto = sinDatos;\n    tipoRespuesta = 'sin_datos_validados';\n  } else if (esLista) {\n    // Las cifras de la lista se extraen de RAG y se validan aritméticamente.\n    // La IA redacta el análisis; este control corrige comparaciones numéricas erróneas.\n    const muestra = valores.slice(0, 3);\n    texto = `Muestra parcial de ${fuente.bancaAutorizada} (hasta 3 cuentas recuperadas):\\n` +\n      muestra.map((x, i) => `${i+1}. ${x.f['Nombre de cuenta']}: ${importe(x.valor)} (${x.valor < 0 ? 'sobregasto' : x.valor > 0 ? 'menor gasto' : 'sin desvío'})`).join('\\n');\n    const pideMayorSobregasto = /\\bmayor(?:es)?\\s+(?:el\\s+)?sobregasto\\b|\\bmas\\s+sobregasto\\b/.test(pregunta);\n    const pideExplicacion = /\\bexplica|\\bexplicame|\\bdiferencias|\\bcompara|\\bcomparacion\\b/.test(pregunta);\n    if (pideMayorSobregasto) {\n      const sobregastos = muestra.filter(x => x.valor < 0);\n      if (sobregastos.length) {\n        const minimo = Math.min(...sobregastos.map(x => x.valor));\n        const mayores = sobregastos.filter(x => x.valor === minimo);\n        const nombres = mayores.map(x => x.f['Nombre de cuenta']).join(' y ');\n        texto += `\\nMayor sobregasto de esta muestra: ${nombres} (${importe(minimo)}).`;\n      } else {\n        texto += '\\nNo hay sobregastos entre las cuentas mostradas.';\n      }\n    }\n    if (pideExplicacion) {\n      texto += '\\nNegativo = gasto superior al plan; positivo = menor gasto. No se dispone de causas.';\n    }\n    tipoRespuesta = (pideMayorSobregasto || pideExplicacion) ? 'lista_comparada_validada' : 'lista_validada';\n  } else if (valores.length === 1) {\n    const {f,valor} = valores[0];\n    texto = `${fuente.bancaAutorizada} — ${f['Nombre de cuenta']}: desvío ${periodo} de ${importe(valor)} (${valor < 0 ? 'sobregasto' : valor > 0 ? 'menor gasto' : 'sin desvío'}).`;\n    tipoRespuesta = 'cuenta_validada';\n  } else {\n    texto = sinDatos;\n    tipoRespuesta = 'ambigua';\n  }\n} else if (!texto) {\n  texto = sinDatos;\n  tipoRespuesta = 'sin_respuesta_modelo';\n}\n\n// Límite técnico de hasta tres elementos y 600 caracteres.\nlet elementos = 0;\ntexto = texto.split('\\n').filter(linea => {\n  if (!/^\\s*(?:[-*•]\\s+|\\d+[.)]\\s+)/.test(linea)) return true;\n  elementos++;\n  return elementos <= 3;\n}).join('\\n').trim();\nif (texto.length > 600) {\n  const tramo = texto.slice(0, 597);\n  const espacio = tramo.lastIndexOf(' ');\n  texto = (espacio > 450 ? tramo.slice(0, espacio) : tramo).trimEnd() + '…';\n}\n// Un resultado insuficiente NO debe publicarse como estado funcional 'ok'.\nconst sinResultado = ['rechazo_seguridad', 'sin_datos_validados', 'ambigua', 'sin_respuesta_modelo'].includes(tipoRespuesta) || texto === sinDatos;\nreturn [{json: {output: texto, estado: sinResultado ? 'sin_datos' : 'ok', verificacion: tipoRespuesta}}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        208
+      ],
+      "id": "44ed36f4-9975-440a-b43b-ba4e7d8560d7",
+      "name": "Formatear respuesta para Webhook",
+      "notes": "V7: deduplicación defensiva de líneas RAG y estado sin_datos cuando no hay resultado validado. Cuentas y listas siguen teniendo validación aritmética."
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        544
+      ],
+      "id": "705ae5e3-2c7a-484e-a4a5-0da8ffde078c",
+      "name": "Calculator - comprobar operaciones"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Filtrar documentos RAG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar documentos RAG": {
+      "main": [
+        [
+          {
+            "node": "Hay documentos autorizados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay documentos autorizados": {
+      "main": [
+        [
+          {
+            "node": "AI Agent RAG Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sin documentos autorizados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent RAG Ollama",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent RAG Ollama": {
+      "main": [
+        [
+          {
+            "node": "Formatear respuesta para Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator - comprobar operaciones": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent RAG Ollama",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {},
+  "nodeGroups": [],
+  "tags": []
+}

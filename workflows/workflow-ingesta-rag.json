@@ -1,0 +1,396 @@
+{
+  "name": "Proyecto Final - Ingesta RAG XLSX - Sin prototipo conversacional",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Carga de documento presupuestario",
+        "formDescription": "Carga del Excel ficticio de las 16 bancas para el sistema RAG",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Documento presupuestario",
+              "fieldType": "file",
+              "fieldName": "documento",
+              "acceptFileTypes": ".xlsx",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        144
+      ],
+      "id": "744438ec-010e-4bac-a3af-3a665caa0417",
+      "name": "On form submission",
+      "webhookId": "89272f04-b113-4014-8d8d-d78361b748df"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "documento",
+        "options": {
+          "sheetName": "Datos_n8n"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        144
+      ],
+      "id": "2bda6bf0-d3ba-4951-9abe-944d318bce05",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst registros = $input.all();\nconst grupos = new Map();\n\nfor (const item of registros) {\n  const r = item.json;\n  const banca = String(r.BANCA ?? \"\").trim();\n  const rubro = String(r.RUBRO ?? \"\").trim();\n\n  if (!banca || !rubro) continue;\n\n  const clave = `${banca}|${rubro}`;\n\n  if (!grupos.has(clave)) {\n    grupos.set(clave, {\n      banca,\n      rubro,\n      periodo: \"YTD_MTD\",\n      detalles: []\n    });\n  }\n\n  const detalle = [\n    `Subrubro: ${r.SUB_RUBRO ?? \"\"}`,\n    `Cuenta: ${r.CUENTA ?? \"\"}`,\n    `Nombre de cuenta: ${r.NOMBRE_CUENTA ?? \"\"}`,\n    `PLAN_YTD: ${r.PLAN_YTD ?? \"\"}`,\n    `REAL_YTD: ${r.REAL_YTD ?? \"\"}`,\n    `DESVIO_YTD: ${r.DESVIO_YTD ?? \"\"}`,\n    `PLAN_MTD: ${r.PLAN_MTD ?? \"\"}`,\n    `REAL_MTD: ${r.REAL_MTD ?? \"\"}`,\n    `DESVIO_MTD: ${r.DESVIO_MTD ?? \"\"}`\n  ].join(\" | \");\n\n  grupos.get(clave).detalles.push(detalle);\n}\n\nreturn Array.from(grupos.values()).map(g => ({\n  json: {\n    banca: g.banca,\n    rubro: g.rubro,\n    periodo: g.periodo,\n    cantidad_registros: g.detalles.length,\n    texto: [\n      `Información presupuestaria ficticia`,\n      `Banca: ${g.banca}`,\n      `Rubro: ${g.rubro}`,\n      `Períodos disponibles: YTD y MTD`,\n      `DESVIO = PLAN - REAL`,\n      `Negativo: sobregasto. Positivo: menor gasto.`,\n      `Los importes siguientes son por registro, no totales.`,\n      ...g.detalles\n    ].join(\"\\n\")\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        0
+      ],
+      "id": "7db92034-97ae-4982-975f-c5807efe3835",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "memoryKey": {
+          "__rl": true,
+          "value": "rag_banca_01",
+          "mode": "list"
+        },
+        "embeddingBatchSize": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        384
+      ],
+      "id": "8963b201-bf4c-4cfe-bf45-4b84828198ad",
+      "name": "Simple Vector Store"
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.texto }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "banca",
+                "value": "={{ $json.banca }}"
+              },
+              {
+                "name": "rubro",
+                "value": "={{ $json.rubro }}"
+              },
+              {
+                "name": "periodo",
+                "value": "={{ $json.periodo }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        912,
+        496
+      ],
+      "id": "5e15e84c-4675-48eb-82a0-4629bfa55b52",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        720,
+        496
+      ],
+      "id": "0b8037ef-ee24-47cf-b559-1929b67b3fc1",
+      "name": "Embeddings Google Gemini"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "757e2338-eba9-466f-a0d2-4cca27a2103a",
+              "name": "texto",
+              "value": "={{ $json.texto }}",
+              "type": "string"
+            },
+            {
+              "id": "404e4653-8f92-4056-b7f2-31a294e255a9",
+              "name": "banca",
+              "value": "={{ $json.banca }}",
+              "type": "string"
+            },
+            {
+              "id": "51ab3ebf-cb28-4572-b792-3cdbf0b9cc78",
+              "name": "rubro",
+              "value": "={{ $json.rubro }}",
+              "type": "string"
+            },
+            {
+              "id": "dbe52791-aa61-4fa2-83c9-715bef5344ff",
+              "name": "periodo",
+              "value": "={{ $json.periodo }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        784,
+        0
+      ],
+      "id": "4b8a130f-e64b-4899-9234-fe507ab72f78",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "fe9540d7-e302-4e0e-b477-35f3bd57f79f",
+              "leftValue": "={{ $json.banca }}",
+              "rightValue": "Banca 01",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.4,
+      "position": [
+        496,
+        0
+      ],
+      "id": "5b4d6148-5ca7-49d7-b0d8-a1705b096fc6",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        576,
+        224
+      ],
+      "id": "23f10aac-51b5-4144-95f6-a2da3e395bda",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "memoryKey": {
+          "__rl": true,
+          "value": "rag_banca_01",
+          "mode": "list",
+          "cachedResultName": "rag_banca_01"
+        },
+        "prompt": "Sueldos básicos Banca 01 desvío YTD"
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        1088,
+        -160
+      ],
+      "id": "65ef2943-df28-4d3c-b0f8-2e8a3ba23a88",
+      "name": "Simple Vector Store1"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        -32
+      ],
+      "id": "93071801-4c6e-44f5-814f-f3f90efe73f5",
+      "name": "Embeddings Google Gemini1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        848,
+        -176
+      ],
+      "id": "a285e35e-352a-46bd-afc6-29e2a45244cb",
+      "name": "When clicking ‘Execute workflow’"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Simple Vector Store1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Simple Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Simple Vector Store1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}
